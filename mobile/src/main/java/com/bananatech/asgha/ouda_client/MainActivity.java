@@ -1,6 +1,10 @@
 package com.bananatech.asgha.ouda_client;
 
+import android.app.ActivityManager;
+import android.app.Service;
 import android.app.Notification;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -21,10 +25,12 @@ import org.json.JSONObject;
 
 import java.net.URISyntaxException;
 
+import com.bananatech.asgha.ouda_client.SocketService;
 public class MainActivity extends AppCompatActivity {
 
-    private Socket mSocket;
-
+    //private Socket mSocket;
+    boolean connected = false;
+    Intent sock_ser;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,22 +38,36 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        try {
+        /*try {
             mSocket = IO.socket("http://ouda-server.herokuapp.com:80");
         } catch (URISyntaxException e) {}
 
-        mSocket.on("notify", onNotify);
+        mSocket.on("notify", onNotify);*/
 
+        sock_ser = new Intent(this, SocketService.class);
         final Button connectButton = (Button) findViewById(R.id.connect);
+        if(isServiceRunning(SocketService.class)) {
+            connected = true;
+            connectButton.setText("Disconnect and Stop");
+        }
         connectButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                if(mSocket.connected()) {
+                /*if(mSocket.connected()) {
                     mSocket.disconnect();
                     connectButton.setText("Connect and Run");
                 }else{
                     mSocket.connect();
                     connectButton.setText("Disconnect and Stop");
+                }*/
+                if(connected){
+                    stopService(sock_ser);
+                    connectButton.setText("Connect and Run");
+                    connected = false;
+                }else{
+                    startService(sock_ser);
+                    connectButton.setText("Disconnect and Stop");
+                    connected = true;
                 }
             }
         });
@@ -75,7 +95,17 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private Emitter.Listener onNotify = new Emitter.Listener() {
+    private boolean isServiceRunning(Class<?> serviceClass){
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for(ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)){
+            if(serviceClass.getName().equals(service.service.getClassName())){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /*private Emitter.Listener onNotify = new Emitter.Listener() {
         @Override
         public void call(final Object... args) {
             runOnUiThread(new Runnable() {
@@ -94,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
-    };
+    };*/
 
 }
+
